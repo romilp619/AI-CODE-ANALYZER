@@ -1,0 +1,5 @@
+{
+  "name": "Sentinel - Security Code Analyzer",
+  "description": "An advanced AI-powered security code analyzer that identifies vulnerabilities like SQL injection, XSS, and secrets in your code, providing detailed remediation reports.",
+  "requestFramePermissions": []
+}
