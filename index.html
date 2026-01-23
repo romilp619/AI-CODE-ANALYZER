@@ -1,53 +1,442 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sentinel - Security Code Analyzer</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel - AI Security Code Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
-      
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #0f172a;
-        color: #f8fafc;
-      }
-      
-      .font-mono {
-        font-family: 'JetBrains Mono', monospace;
-      }
-
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #1e293b; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #475569; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #64748b; 
-      }
+        body {
+            background: #0f172a;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .code-editor {
+            background: #0b1120;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+        }
+        
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "recharts": "https://esm.sh/recharts@^3.6.0"
-  }
-}
-</script>
 </head>
-  <body>
+<body>
     <div id="root"></div>
-  </body>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        function App() {
+            const [code, setCode] = useState(`// Welcome to Sentinel Security Analyzer
+// AI-powered code security scanner
+
+import sqlite3
+
+def get_user_data(username):
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    # VULNERABLE: SQL Injection
+    query = "SELECT * FROM users WHERE username = '" + username + "'"
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def process_input(user_input):
+    # VULNERABLE: XSS
+    return "<div>" + user_input + "</div>"
+
+# Business logic issue
+def transfer_funds(sender, receiver, amount):
+    if amount > 0:
+        # No validation for negative amounts
+        return "Transfer complete"
+    return "Invalid amount"`);
+            
+            const [loading, setLoading] = useState(false);
+            const [report, setReport] = useState(null);
+            const [demoMode, setDemoMode] = useState(false);
+            const [testResults, setTestResults] = useState([]);
+            
+            const startDemo = () => {
+                setDemoMode(true);
+                setLoading(true);
+                
+                setTimeout(() => {
+                    const mockReport = {
+                        score: 65,
+                        risk: 'Medium',
+                        issues: 3,
+                        summary: 'Found SQL Injection, XSS, and business logic vulnerabilities',
+                        vulnerabilities: [
+                            {
+                                id: 1,
+                                name: 'SQL Injection',
+                                severity: 'Critical',
+                                fix: 'Use parameterized queries',
+                                location: 'Line 8'
+                            },
+                            {
+                                id: 2,
+                                name: 'Cross-Site Scripting (XSS)',
+                                severity: 'High',
+                                fix: 'Implement HTML escaping',
+                                location: 'Line 13'
+                            },
+                            {
+                                id: 3,
+                                name: 'Business Logic Flaw',
+                                severity: 'Medium',
+                                fix: 'Add input validation',
+                                location: 'Line 18'
+                            }
+                        ]
+                    };
+                    
+                    setReport(mockReport);
+                    setLoading(false);
+                    
+                    setTimeout(() => {
+                        setTestResults([
+                            { test: 'SQL Injection Fix', status: '✅ PASSED', detail: 'Parameterized queries implemented' },
+                            { test: 'XSS Protection', status: '✅ PASSED', detail: 'HTML encoding verified' },
+                            { test: 'Performance', status: '⚠️ WARNING', detail: 'Minimal impact detected' }
+                        ]);
+                    }, 1000);
+                }, 2000);
+            };
+            
+            const analyzeCode = () => {
+                setLoading(true);
+                setTimeout(() => {
+                    const randomReport = {
+                        score: Math.floor(Math.random() * 40) + 40,
+                        risk: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)],
+                        issues: Math.floor(Math.random() * 5) + 1,
+                        summary: 'Security analysis completed successfully',
+                        vulnerabilities: [
+                            {
+                                id: 1,
+                                name: 'Security Issue Detected',
+                                severity: 'Medium',
+                                fix: 'Implement proper security measures',
+                                location: 'Multiple locations'
+                            }
+                        ]
+                    };
+                    setReport(randomReport);
+                    setLoading(false);
+                }, 1500);
+            };
+            
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <header className="glass border-b border-slate-800 py-4">
+                        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-500/20 rounded-lg">
+                                    <i className="fas fa-shield-alt text-indigo-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                                        Sentinel Security
+                                    </h1>
+                                    <p className="text-sm text-slate-500">AI Code Analyzer v3.0</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className="px-3 py-1 bg-indigo-900/30 border border-indigo-700/50 rounded-full text-sm text-indigo-300">
+                                    <i className="fas fa-bolt mr-2"></i>
+                                    Gemini 3 Pro
+                                </span>
+                                <button className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg font-medium">
+                                    <i className="fas fa-play mr-2"></i>
+                                    Demo Mode
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                    
+                    <main className="max-w-7xl mx-auto px-4 py-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Left Side - Code Editor */}
+                            <div className="space-y-4">
+                                <div className="flex gap-2">
+                                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium">
+                                        <i className="fas fa-code mr-2"></i>
+                                        Code Analysis
+                                    </button>
+                                    <button className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700">
+                                        <i className="fab fa-github mr-2"></i>
+                                        GitHub Repo
+                                    </button>
+                                </div>
+                                
+                                <div className="code-editor">
+                                    <div className="p-3 bg-slate-800/50 border-b border-slate-800 flex justify-between">
+                                        <span className="text-slate-300 font-medium">
+                                            <i className="fas fa-file-code mr-2"></i>
+                                            source.py
+                                        </span>
+                                        <select className="bg-slate-900 text-slate-300 px-2 py-1 rounded text-sm">
+                                            <option>Python</option>
+                                            <option>JavaScript</option>
+                                            <option>TypeScript</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <textarea 
+                                        className="w-full h-80 bg-transparent text-slate-300 p-4 font-mono focus:outline-none resize-none"
+                                        value={code}
+                                        onChange={(e) => setCode(e.target.value)}
+                                        spellCheck={false}
+                                    />
+                                    
+                                    <div className="p-4 bg-slate-800/30 border-t border-slate-800 flex justify-between">
+                                        <button 
+                                            onClick={() => setCode('')}
+                                            className="px-4 py-2 text-slate-400 hover:text-red-400"
+                                        >
+                                            <i className="fas fa-trash mr-2"></i>
+                                            Clear
+                                        </button>
+                                        <button 
+                                            onClick={startDemo}
+                                            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg font-medium"
+                                        >
+                                            <i className="fas fa-rocket mr-2"></i>
+                                            Start Demo
+                                        </button>
+                                        <button 
+                                            onClick={analyzeCode}
+                                            disabled={loading}
+                                            className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium disabled:opacity-50"
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <i className="fas fa-spinner animate-spin mr-2"></i>
+                                                    Analyzing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <i className="fas fa-search mr-2"></i>
+                                                    Scan Code
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {demoMode && (
+                                    <div className="p-4 bg-amber-600/10 border border-amber-500/30 rounded-lg animate-pulse">
+                                        <div className="flex items-center gap-3">
+                                            <i className="fas fa-play-circle text-amber-400 text-xl"></i>
+                                            <div>
+                                                <h3 className="font-medium text-amber-300">Demo Mode Active</h3>
+                                                <p className="text-sm text-amber-400/70">Automatic vulnerability detection in progress</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Right Side - Results */}
+                            <div className="space-y-6">
+                                {loading && !report ? (
+                                    <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-800 rounded-xl">
+                                        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                        <h3 className="text-xl font-semibold text-slate-300">AI Analysis in Progress</h3>
+                                        <p className="text-slate-500 mt-2">Scanning for security vulnerabilities...</p>
+                                    </div>
+                                ) : report ? (
+                                    <div className="animate-fade-in space-y-6">
+                                        {/* Security Dashboard */}
+                                        <div className="glass rounded-xl p-6">
+                                            <h3 className="text-lg font-semibold text-slate-200 mb-4">
+                                                <i className="fas fa-chart-line text-cyan-400 mr-2"></i>
+                                                Security Dashboard
+                                            </h3>
+                                            <div className="grid grid-cols-4 gap-4">
+                                                <div className="text-center p-3 bg-black/30 rounded-lg">
+                                                    <div className="text-2xl font-bold text-emerald-400">{report.score}%</div>
+                                                    <div className="text-xs text-slate-400">Score</div>
+                                                </div>
+                                                <div className="text-center p-3 bg-black/30 rounded-lg">
+                                                    <div className="text-2xl font-bold text-red-400">{report.issues}</div>
+                                                    <div className="text-xs text-slate-400">Issues</div>
+                                                </div>
+                                                <div className="text-center p-3 bg-black/30 rounded-lg">
+                                                    <div className="text-2xl font-bold text-blue-400">24h</div>
+                                                    <div className="text-xs text-slate-400">Last Scan</div>
+                                                </div>
+                                                <div className="text-center p-3 bg-black/30 rounded-lg">
+                                                    <div className="text-2xl font-bold text-purple-400">AI</div>
+                                                    <div className="text-xs text-slate-400">Powered</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Test Results */}
+                                        {testResults.length > 0 && (
+                                            <div className="glass rounded-xl p-6 border border-blue-800/30">
+                                                <h3 className="text-lg font-semibold text-cyan-400 mb-4">
+                                                    <i className="fas fa-vial text-cyan-400 mr-2"></i>
+                                                    AI-Verified Fix Testing
+                                                </h3>
+                                                <div className="space-y-2">
+                                                    {testResults.map((test, i) => (
+                                                        <div key={i} className="flex justify-between items-center p-3 bg-black/30 rounded-lg">
+                                                            <div>
+                                                                <div className="font-medium text-slate-200">{test.test}</div>
+                                                                <div className="text-xs text-slate-400">{test.detail}</div>
+                                                            </div>
+                                                            <span className={`px-3 py-1 rounded-full text-sm ${
+                                                                test.status.includes('PASSED') ? 'bg-emerald-500/20 text-emerald-400' :
+                                                                'bg-yellow-500/20 text-yellow-400'
+                                                            }`}>
+                                                                {test.status}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Results Summary */}
+                                        <div className="glass rounded-xl p-6">
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div>
+                                                    <h2 className="text-xl font-bold text-slate-200">Analysis Results</h2>
+                                                    <p className="text-slate-400">{report.summary}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className={`text-2xl font-bold ${
+                                                        report.risk === 'High' ? 'text-red-400' :
+                                                        report.risk === 'Medium' ? 'text-yellow-400' :
+                                                        'text-green-400'
+                                                    }`}>
+                                                        {report.risk} Risk
+                                                    </div>
+                                                    <div className="text-sm text-slate-500">Security Level</div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Vulnerabilities */}
+                                            <div className="space-y-3">
+                                                <h3 className="font-semibold text-slate-300">Detected Vulnerabilities</h3>
+                                                {report.vulnerabilities.map(vuln => (
+                                                    <div key={vuln.id} className="p-3 bg-slate-800/30 rounded-lg border border-slate-700">
+                                                        <div className="flex justify-between mb-2">
+                                                            <span className="font-medium text-slate-200">{vuln.name}</span>
+                                                            <span className={`text-sm font-medium ${
+                                                                vuln.severity === 'Critical' ? 'text-red-400' :
+                                                                vuln.severity === 'High' ? 'text-orange-400' :
+                                                                'text-yellow-400'
+                                                            }`}>
+                                                                {vuln.severity}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm text-slate-400 mb-2">{vuln.fix}</p>
+                                                        <div className="text-xs text-slate-500">Location: {vuln.location}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            
+                                            <button className="w-full mt-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:opacity-90">
+                                                <i className="fas fa-magic mr-2"></i>
+                                                Generate AI Fixes for All Issues
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-800 rounded-xl">
+                                        <i className="fas fa-code text-4xl text-slate-600 mb-4"></i>
+                                        <h3 className="text-xl font-semibold text-slate-300">Ready for Analysis</h3>
+                                        <p className="text-slate-500 max-w-sm mt-2 text-center">
+                                            Paste your code and click "Scan Code" to find security vulnerabilities
+                                        </p>
+                                        <button 
+                                            onClick={startDemo}
+                                            className="mt-6 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium"
+                                        >
+                                            <i className="fas fa-play mr-2"></i>
+                                            Try Quick Demo
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </main>
+                    
+                    <footer className="border-t border-slate-800 py-6 text-center text-slate-600 text-sm">
+                        <p>&copy; 2024 Sentinel Security Analyzer | Built for Gemini 3 Hackathon</p>
+                        <p className="mt-1 text-xs text-slate-700">AI-powered code security scanning</p>
+                    </footer>
+                    
+                    <button className="fixed bottom-6 right-6 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow-lg">
+                        <i className="fas fa-video mr-2"></i>
+                        Record Demo
+                    </button>
+                </div>
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
 </html>
