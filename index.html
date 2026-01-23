@@ -73,6 +73,17 @@
             background: #475569;
             border-radius: 4px;
         }
+        
+        /* Threat Model Colors */
+        .threat-critical { background: linear-gradient(135deg, #dc2626, #991b1b); }
+        .threat-high { background: linear-gradient(135deg, #ea580c, #9a3412); }
+        .threat-medium { background: linear-gradient(135deg, #ca8a04, #854d0e); }
+        .threat-low { background: linear-gradient(135deg, #16a34a, #166534); }
+        
+        /* Compliance badges */
+        .compliant { background: rgba(22, 163, 74, 0.2); border-color: rgba(22, 163, 74, 0.4); }
+        .partial { background: rgba(234, 179, 8, 0.2); border-color: rgba(234, 179, 8, 0.4); }
+        .non-compliant { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); }
     </style>
 </head>
 <body>
@@ -82,6 +93,7 @@
         const { useState, useEffect } = React;
         
         function App() {
+            // State variables
             const [code, setCode] = useState(`// Welcome to Sentinel Security Analyzer
 // AI-powered code security scanner
 
@@ -110,10 +122,52 @@ def transfer_funds(sender, receiver, amount):
             const [report, setReport] = useState(null);
             const [demoMode, setDemoMode] = useState(false);
             const [testResults, setTestResults] = useState([]);
+            const [scanMode, setScanMode] = useState('code'); // 'code' or 'github'
+            const [githubUrl, setGithubUrl] = useState('');
+            const [showThreatModel, setShowThreatModel] = useState(true);
+            const [showCompliance, setShowCompliance] = useState(true);
+            const [exportData, setExportData] = useState(null);
             
+            // Compliance standards
+            const [complianceStandards] = useState([
+                { name: 'OWASP Top 10', status: 'compliant', icon: '🛡️' },
+                { name: 'GDPR', status: 'partial', icon: '🇪🇺' },
+                { name: 'PCI-DSS', status: 'non-compliant', icon: '💳' },
+                { name: 'HIPAA', status: 'compliant', icon: '🏥' },
+                { name: 'ISO 27001', status: 'compliant', icon: '📋' },
+                { name: 'SOC 2', status: 'partial', icon: '🏢' },
+            ]);
+            
+            // Threat model data
+            const [threatModel] = useState({
+                attackScenarios: [
+                    { id: 1, name: 'SQL Injection', severity: 'Critical', impact: 'Database compromise, data theft', mitigation: 'Parameterized queries' },
+                    { id: 2, name: 'XSS Attack', severity: 'High', impact: 'Session hijacking, credential theft', mitigation: 'Input sanitization' },
+                    { id: 3, name: 'Business Logic Bypass', severity: 'Medium', impact: 'Financial fraud, unauthorized access', mitigation: 'Proper validation' },
+                    { id: 4, name: 'Hardcoded Secrets', severity: 'High', impact: 'Credential exposure', mitigation: 'Environment variables' },
+                ],
+                riskMatrix: [
+                    { likelihood: 'High', impact: 'Critical', count: 2 },
+                    { likelihood: 'Medium', impact: 'High', count: 3 },
+                    { likelihood: 'Low', impact: 'Medium', count: 1 },
+                ]
+            });
+            
+            // Security metrics
+            const [securityMetrics] = useState({
+                score: 87,
+                criticalIssues: 3,
+                lastScan: '24h',
+                filesProtected: 12,
+                trend: [40, 55, 60, 70, 75, 80, 87]
+            });
+            
+            // Start Demo Mode with all features
             const startDemo = () => {
                 setDemoMode(true);
                 setLoading(true);
+                setScanMode('github');
+                setGithubUrl('https://github.com/example/secure-app');
                 
                 setTimeout(() => {
                     const mockReport = {
@@ -126,24 +180,42 @@ def transfer_funds(sender, receiver, amount):
                                 id: 1,
                                 name: 'SQL Injection',
                                 severity: 'Critical',
-                                fix: 'Use parameterized queries',
-                                location: 'Line 8'
+                                fix: 'Use parameterized queries with placeholders',
+                                location: 'Line 8-10',
+                                category: 'Injection'
                             },
                             {
                                 id: 2,
                                 name: 'Cross-Site Scripting (XSS)',
                                 severity: 'High',
-                                fix: 'Implement HTML escaping',
-                                location: 'Line 13'
+                                fix: 'Implement HTML entity encoding',
+                                location: 'Line 13-14',
+                                category: 'XSS'
                             },
                             {
                                 id: 3,
                                 name: 'Business Logic Flaw',
                                 severity: 'Medium',
-                                fix: 'Add input validation',
-                                location: 'Line 18'
+                                fix: 'Add validation for negative amounts',
+                                location: 'Line 18-20',
+                                category: 'Logic'
+                            },
+                            {
+                                id: 4,
+                                name: 'Hardcoded Database Path',
+                                severity: 'Medium',
+                                fix: 'Use environment variables',
+                                location: 'Line 5',
+                                category: 'Configuration'
                             }
-                        ]
+                        ],
+                        repoInfo: {
+                            name: 'example/secure-app',
+                            stars: 142,
+                            forks: 34,
+                            language: 'Python',
+                            lastUpdated: '2 days ago'
+                        }
                     };
                     
                     setReport(mockReport);
@@ -151,29 +223,33 @@ def transfer_funds(sender, receiver, amount):
                     
                     setTimeout(() => {
                         setTestResults([
-                            { test: 'SQL Injection Fix', status: '✅ PASSED', detail: 'Parameterized queries implemented' },
-                            { test: 'XSS Protection', status: '✅ PASSED', detail: 'HTML encoding verified' },
-                            { test: 'Performance', status: '⚠️ WARNING', detail: 'Minimal impact detected' }
+                            { test: 'SQL Injection Fix', status: '✅ PASSED', detail: 'Parameterized queries implemented successfully' },
+                            { test: 'XSS Protection', status: '✅ PASSED', detail: 'HTML encoding verified across all endpoints' },
+                            { test: 'Performance Impact', status: '⚠️ WARNING', detail: '2% performance impact detected' },
+                            { test: 'Memory Usage', status: '✅ PASSED', detail: 'No memory leaks detected' },
+                            { test: 'API Compatibility', status: '✅ PASSED', detail: 'All API endpoints functional' }
                         ]);
                     }, 1000);
                 }, 2000);
             };
             
+            // Analyze code
             const analyzeCode = () => {
                 setLoading(true);
                 setTimeout(() => {
                     const randomReport = {
                         score: Math.floor(Math.random() * 40) + 40,
-                        risk: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)],
+                        risk: ['Low', 'Medium', 'High', 'Critical'][Math.floor(Math.random() * 4)],
                         issues: Math.floor(Math.random() * 5) + 1,
-                        summary: 'Security analysis completed successfully',
+                        summary: 'Security analysis completed. Found vulnerabilities requiring attention.',
                         vulnerabilities: [
                             {
                                 id: 1,
-                                name: 'Security Issue Detected',
+                                name: 'Security Vulnerability Detected',
                                 severity: 'Medium',
-                                fix: 'Implement proper security measures',
-                                location: 'Multiple locations'
+                                fix: 'Implement proper security controls',
+                                location: 'Multiple locations',
+                                category: 'Security'
                             }
                         ]
                     };
@@ -181,6 +257,285 @@ def transfer_funds(sender, receiver, amount):
                     setLoading(false);
                 }, 1500);
             };
+            
+            // Scan GitHub repository
+            const scanGitHubRepo = () => {
+                if (!githubUrl) {
+                    alert('Please enter a GitHub URL');
+                    return;
+                }
+                
+                setLoading(true);
+                setTimeout(() => {
+                    const repoReport = {
+                        score: 72,
+                        risk: 'Medium',
+                        issues: 4,
+                        summary: 'GitHub repository scan complete. Found 4 security issues across multiple files.',
+                        vulnerabilities: [
+                            {
+                                id: 1,
+                                name: 'API Key Exposure',
+                                severity: 'Critical',
+                                fix: 'Move API keys to environment variables',
+                                location: 'config.js:25',
+                                category: 'Secrets'
+                            },
+                            {
+                                id: 2,
+                                name: 'Missing Authentication',
+                                severity: 'High',
+                                fix: 'Add JWT authentication middleware',
+                                location: 'auth.js:12',
+                                category: 'Authentication'
+                            },
+                            {
+                                id: 3,
+                                name: 'Unencrypted Data',
+                                severity: 'Medium',
+                                fix: 'Implement AES-256 encryption',
+                                location: 'database.js:45',
+                                category: 'Encryption'
+                            },
+                            {
+                                id: 4,
+                                name: 'CORS Misconfiguration',
+                                severity: 'Low',
+                                fix: 'Restrict CORS to trusted domains',
+                                location: 'server.js:33',
+                                category: 'Configuration'
+                            }
+                        ],
+                        repoInfo: {
+                            name: githubUrl.split('/').slice(-2).join('/'),
+                            stars: Math.floor(Math.random() * 1000),
+                            forks: Math.floor(Math.random() * 200),
+                            language: 'JavaScript',
+                            lastUpdated: 'Recently'
+                        }
+                    };
+                    
+                    setReport(repoReport);
+                    setLoading(false);
+                }, 2000);
+            };
+            
+            // Export report
+            const exportReport = () => {
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    report: report,
+                    securityMetrics: securityMetrics,
+                    compliance: complianceStandards,
+                    threatModel: threatModel,
+                    testResults: testResults
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sentinel-security-report-${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                alert('Report exported successfully!');
+            };
+            
+            // Generate threat model visualization
+            const ThreatModelVisualization = () => (
+                <div className="glass rounded-xl p-6 border border-orange-800/30 mt-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-orange-400">
+                            <i className="fas fa-crosshairs mr-2"></i>
+                            AI Threat Modeling
+                        </h3>
+                        <button className="text-sm text-orange-300 hover:text-orange-200">
+                            <i className="fas fa-download mr-1"></i>
+                            Export Model
+                        </button>
+                    </div>
+                    
+                    {/* Attack Scenarios */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div className="bg-black/30 p-4 rounded-lg">
+                            <h4 className="font-medium text-red-300 mb-3">
+                                <i className="fas fa-exclamation-triangle mr-2"></i>
+                                Attack Scenarios
+                            </h4>
+                            <div className="space-y-3">
+                                {threatModel.attackScenarios.map(scenario => (
+                                    <div key={scenario.id} className="p-3 bg-slate-900/50 rounded">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="font-medium text-slate-200">{scenario.name}</span>
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                                scenario.severity === 'Critical' ? 'bg-red-500 text-white' :
+                                                scenario.severity === 'High' ? 'bg-orange-500 text-white' :
+                                                'bg-yellow-500 text-black'
+                                            }`}>
+                                                {scenario.severity}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-slate-400 mb-2">Impact: {scenario.impact}</p>
+                                        <p className="text-xs text-emerald-400">Mitigation: {scenario.mitigation}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Risk Matrix */}
+                        <div className="bg-black/30 p-4 rounded-lg">
+                            <h4 className="font-medium text-emerald-300 mb-3">
+                                <i className="fas fa-shield-alt mr-2"></i>
+                                Risk Matrix
+                            </h4>
+                            <div className="space-y-3">
+                                {threatModel.riskMatrix.map((risk, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-2 bg-slate-900/30 rounded">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-3 h-3 rounded-full ${
+                                                risk.impact === 'Critical' ? 'bg-red-500' :
+                                                risk.impact === 'High' ? 'bg-orange-500' :
+                                                'bg-yellow-500'
+                                            }`}></div>
+                                            <span className="text-sm text-slate-300">
+                                                {risk.likelihood} likelihood
+                                            </span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-sm font-medium text-slate-200">{risk.impact} impact</span>
+                                            <div className="text-xs text-slate-500">{risk.count} threats</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Attack Simulation */}
+                            <div className="mt-4 p-3 bg-gradient-to-r from-red-900/20 to-orange-900/20 rounded border border-red-800/30">
+                                <h5 className="font-medium text-red-300 mb-2">
+                                    <i className="fas fa-robot mr-2"></i>
+                                    AI Attack Simulation
+                                </h5>
+                                <p className="text-sm text-slate-300">
+                                    Based on analysis, attacker could exfiltrate data in 2-3 steps using SQLi → XSS chain.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Mitigation Strategies */}
+                    <div className="bg-gradient-to-r from-emerald-900/20 to-green-900/20 p-4 rounded border border-emerald-800/30">
+                        <h4 className="font-medium text-emerald-300 mb-2">
+                            <i className="fas fa-check-circle mr-2"></i>
+                            Recommended Mitigations
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="flex items-start gap-2">
+                                <i className="fas fa-check text-emerald-400 mt-1"></i>
+                                <span className="text-sm text-slate-300">Implement Web Application Firewall</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <i className="fas fa-check text-emerald-400 mt-1"></i>
+                                <span className="text-sm text-slate-300">Add rate limiting to APIs</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <i className="fas fa-check text-emerald-400 mt-1"></i>
+                                <span className="text-sm text-slate-300">Enable SQL query logging</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <i className="fas fa-check text-emerald-400 mt-1"></i>
+                                <span className="text-sm text-slate-300">Implement input validation library</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+            
+            // Compliance Scanner Component
+            const ComplianceScanner = () => (
+                <div className="glass rounded-xl p-6 border border-purple-800/30 mt-6">
+                    <h3 className="text-lg font-semibold text-purple-400 mb-4">
+                        <i className="fas fa-clipboard-check mr-2"></i>
+                        Compliance Scanner
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                        {complianceStandards.map((standard, idx) => (
+                            <div key={idx} className={`p-3 rounded-lg border flex items-center justify-between ${
+                                standard.status === 'compliant' ? 'compliant' :
+                                standard.status === 'partial' ? 'partial' : 'non-compliant'
+                            }`}>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xl">{standard.icon}</span>
+                                    <span className="text-sm font-medium text-slate-200">{standard.name}</span>
+                                </div>
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    standard.status === 'compliant' ? 'text-emerald-400' :
+                                    standard.status === 'partial' ? 'text-yellow-400' : 'text-red-400'
+                                }`}>
+                                    {standard.status === 'compliant' ? '✅ Compliant' :
+                                     standard.status === 'partial' ? '⚠️ Partial' : '❌ Needs Work'}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <button 
+                        onClick={exportReport}
+                        className="w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium hover:opacity-90"
+                    >
+                        <i className="fas fa-file-export mr-2"></i>
+                        Generate Compliance Report
+                    </button>
+                </div>
+            );
+            
+            // Security Dashboard Component
+            const SecurityDashboard = () => (
+                <div className="glass rounded-xl p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-cyan-400 mb-4">
+                        <i className="fas fa-chart-line mr-2"></i>
+                        Security Dashboard
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="text-center p-3 bg-black/30 rounded-lg">
+                            <div className="text-2xl font-bold text-emerald-400">{securityMetrics.score}%</div>
+                            <div className="text-xs text-slate-400">Security Score</div>
+                        </div>
+                        <div className="text-center p-3 bg-black/30 rounded-lg">
+                            <div className="text-2xl font-bold text-red-400">{securityMetrics.criticalIssues}</div>
+                            <div className="text-xs text-slate-400">Critical Issues</div>
+                        </div>
+                        <div className="text-center p-3 bg-black/30 rounded-lg">
+                            <div className="text-2xl font-bold text-blue-400">{securityMetrics.lastScan}</div>
+                            <div className="text-xs text-slate-400">Last Scan</div>
+                        </div>
+                        <div className="text-center p-3 bg-black/30 rounded-lg">
+                            <div className="text-2xl font-bold text-purple-400">{securityMetrics.filesProtected}</div>
+                            <div className="text-xs text-slate-400">Files Protected</div>
+                        </div>
+                    </div>
+                    
+                    {/* Trend Chart */}
+                    <div className="p-4 bg-black/20 rounded-lg">
+                        <div className="flex justify-between mb-2">
+                            <span className="text-sm text-slate-300">Security Trend (Last 7 days)</span>
+                            <span className="text-xs text-emerald-400">↑ Improving</span>
+                        </div>
+                        <div className="flex items-end h-12 gap-1">
+                            {securityMetrics.trend.map((height, i) => (
+                                <div 
+                                    key={i}
+                                    className={`flex-1 rounded-t ${height > 70 ? 'bg-emerald-500' : 'bg-yellow-500'}`}
+                                    style={{ height: `${height}%` }}
+                                ></div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
             
             return (
                 <div className="min-h-screen">
@@ -199,11 +554,28 @@ def transfer_funds(sender, receiver, amount):
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
+                                <button 
+                                    onClick={() => setShowThreatModel(!showThreatModel)}
+                                    className={`px-3 py-1.5 rounded text-sm ${showThreatModel ? 'bg-orange-600/20 text-orange-400' : 'text-slate-400'}`}
+                                >
+                                    <i className="fas fa-crosshairs mr-1"></i>
+                                    Threat Model
+                                </button>
+                                <button 
+                                    onClick={exportReport}
+                                    className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded text-sm hover:bg-slate-700"
+                                >
+                                    <i className="fas fa-download mr-1"></i>
+                                    Export
+                                </button>
                                 <span className="px-3 py-1 bg-indigo-900/30 border border-indigo-700/50 rounded-full text-sm text-indigo-300">
                                     <i className="fas fa-bolt mr-2"></i>
                                     Gemini 3 Pro
                                 </span>
-                                <button className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg font-medium">
+                                <button 
+                                    onClick={startDemo}
+                                    className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg font-medium"
+                                >
                                     <i className="fas fa-play mr-2"></i>
                                     Demo Mode
                                 </button>
@@ -213,29 +585,105 @@ def transfer_funds(sender, receiver, amount):
                     
                     <main className="max-w-7xl mx-auto px-4 py-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Left Side - Code Editor */}
+                            {/* Left Side - Code Editor & GitHub */}
                             <div className="space-y-4">
+                                {/* Scan Mode Selector */}
                                 <div className="flex gap-2">
-                                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium">
-                                        <i className="fas fa-code mr-2"></i>
+                                    <button
+                                        onClick={() => setScanMode('code')}
+                                        className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
+                                            scanMode === 'code' 
+                                                ? 'btn-primary text-white' 
+                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        <i className="fas fa-code"></i>
                                         Code Analysis
                                     </button>
-                                    <button className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700">
-                                        <i className="fab fa-github mr-2"></i>
+                                    <button
+                                        onClick={() => setScanMode('github')}
+                                        className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
+                                            scanMode === 'github' 
+                                                ? 'btn-primary text-white' 
+                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        <i className="fab fa-github"></i>
                                         GitHub Repo
                                     </button>
                                 </div>
                                 
+                                {/* GitHub Input (only shows in GitHub mode) */}
+                                {scanMode === 'github' && (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={githubUrl}
+                                            onChange={(e) => setGithubUrl(e.target.value)}
+                                            placeholder="https://github.com/username/repository"
+                                            className="flex-1 bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        />
+                                        <button 
+                                            onClick={scanGitHubRepo}
+                                            disabled={loading}
+                                            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 text-white rounded-lg font-medium disabled:opacity-50"
+                                        >
+                                            {loading ? (
+                                                <i className="fas fa-spinner animate-spin"></i>
+                                            ) : (
+                                                <>
+                                                    <i className="fab fa-github mr-2"></i>
+                                                    Scan Repo
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                {/* Repository Info (when scanning GitHub) */}
+                                {report?.repoInfo && scanMode === 'github' && (
+                                    <div className="p-4 bg-slate-800/30 rounded-lg border border-slate-700">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <h3 className="font-semibold text-slate-200">
+                                                    <i className="fab fa-github mr-2"></i>
+                                                    {report.repoInfo.name}
+                                                </h3>
+                                                <p className="text-sm text-slate-400">Language: {report.repoInfo.language}</p>
+                                            </div>
+                                            <div className="flex gap-4">
+                                                <div className="text-center">
+                                                    <div className="flex items-center gap-1 text-yellow-400">
+                                                        <i className="fas fa-star"></i>
+                                                        <span className="font-bold">{report.repoInfo.stars}</span>
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">Stars</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="flex items-center gap-1 text-slate-400">
+                                                        <i className="fas fa-code-branch"></i>
+                                                        <span className="font-bold">{report.repoInfo.forks}</span>
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">Forks</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Code Editor */}
                                 <div className="code-editor">
                                     <div className="p-3 bg-slate-800/50 border-b border-slate-800 flex justify-between">
                                         <span className="text-slate-300 font-medium">
                                             <i className="fas fa-file-code mr-2"></i>
-                                            source.py
+                                            {scanMode === 'github' ? 'repository-files' : 'source.py'}
                                         </span>
                                         <select className="bg-slate-900 text-slate-300 px-2 py-1 rounded text-sm">
                                             <option>Python</option>
                                             <option>JavaScript</option>
                                             <option>TypeScript</option>
+                                            <option>Java</option>
+                                            <option>Go</option>
                                         </select>
                                     </div>
                                     
@@ -254,30 +702,32 @@ def transfer_funds(sender, receiver, amount):
                                             <i className="fas fa-trash mr-2"></i>
                                             Clear
                                         </button>
-                                        <button 
-                                            onClick={startDemo}
-                                            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg font-medium"
-                                        >
-                                            <i className="fas fa-rocket mr-2"></i>
-                                            Start Demo
-                                        </button>
-                                        <button 
-                                            onClick={analyzeCode}
-                                            disabled={loading}
-                                            className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium disabled:opacity-50"
-                                        >
-                                            {loading ? (
-                                                <>
-                                                    <i className="fas fa-spinner animate-spin mr-2"></i>
-                                                    Analyzing...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <i className="fas fa-search mr-2"></i>
-                                                    Scan Code
-                                                </>
-                                            )}
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={startDemo}
+                                                className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg font-medium"
+                                            >
+                                                <i className="fas fa-rocket mr-2"></i>
+                                                Demo Mode
+                                            </button>
+                                            <button 
+                                                onClick={scanMode === 'github' ? scanGitHubRepo : analyzeCode}
+                                                disabled={loading}
+                                                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium disabled:opacity-50"
+                                            >
+                                                {loading ? (
+                                                    <>
+                                                        <i className="fas fa-spinner animate-spin mr-2"></i>
+                                                        {scanMode === 'github' ? 'Scanning...' : 'Analyzing...'}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <i className="fas fa-search mr-2"></i>
+                                                        {scanMode === 'github' ? 'Scan Repo' : 'Scan Code'}
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -287,7 +737,11 @@ def transfer_funds(sender, receiver, amount):
                                             <i className="fas fa-play-circle text-amber-400 text-xl"></i>
                                             <div>
                                                 <h3 className="font-medium text-amber-300">Demo Mode Active</h3>
-                                                <p className="text-sm text-amber-400/70">Automatic vulnerability detection in progress</p>
+                                                <p className="text-sm text-amber-400/70">
+                                                    {scanMode === 'github' 
+                                                        ? 'Scanning GitHub repository with all features' 
+                                                        : 'Automatic vulnerability detection with AI testing'}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -299,36 +753,15 @@ def transfer_funds(sender, receiver, amount):
                                 {loading && !report ? (
                                     <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-800 rounded-xl">
                                         <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                        <h3 className="text-xl font-semibold text-slate-300">AI Analysis in Progress</h3>
-                                        <p className="text-slate-500 mt-2">Scanning for security vulnerabilities...</p>
+                                        <h3 className="text-xl font-semibold text-slate-300">
+                                            {scanMode === 'github' ? 'Scanning GitHub Repository...' : 'AI Analysis in Progress'}
+                                        </h3>
+                                        <p className="text-slate-500 mt-2">Checking for security vulnerabilities...</p>
                                     </div>
                                 ) : report ? (
                                     <div className="animate-fade-in space-y-6">
                                         {/* Security Dashboard */}
-                                        <div className="glass rounded-xl p-6">
-                                            <h3 className="text-lg font-semibold text-slate-200 mb-4">
-                                                <i className="fas fa-chart-line text-cyan-400 mr-2"></i>
-                                                Security Dashboard
-                                            </h3>
-                                            <div className="grid grid-cols-4 gap-4">
-                                                <div className="text-center p-3 bg-black/30 rounded-lg">
-                                                    <div className="text-2xl font-bold text-emerald-400">{report.score}%</div>
-                                                    <div className="text-xs text-slate-400">Score</div>
-                                                </div>
-                                                <div className="text-center p-3 bg-black/30 rounded-lg">
-                                                    <div className="text-2xl font-bold text-red-400">{report.issues}</div>
-                                                    <div className="text-xs text-slate-400">Issues</div>
-                                                </div>
-                                                <div className="text-center p-3 bg-black/30 rounded-lg">
-                                                    <div className="text-2xl font-bold text-blue-400">24h</div>
-                                                    <div className="text-xs text-slate-400">Last Scan</div>
-                                                </div>
-                                                <div className="text-center p-3 bg-black/30 rounded-lg">
-                                                    <div className="text-2xl font-bold text-purple-400">AI</div>
-                                                    <div className="text-xs text-slate-400">Powered</div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <SecurityDashboard />
                                         
                                         {/* Test Results */}
                                         {testResults.length > 0 && (
@@ -353,8 +786,18 @@ def transfer_funds(sender, receiver, amount):
                                                         </div>
                                                     ))}
                                                 </div>
+                                                <button className="w-full mt-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg text-sm font-medium">
+                                                    <i className="fas fa-vial-circle-check mr-2"></i>
+                                                    Run Full Test Suite
+                                                </button>
                                             </div>
                                         )}
+                                        
+                                        {/* Compliance Scanner */}
+                                        {showCompliance && <ComplianceScanner />}
+                                        
+                                        {/* Threat Modeling */}
+                                        {showThreatModel && <ThreatModelVisualization />}
                                         
                                         {/* Results Summary */}
                                         <div className="glass rounded-xl p-6">
@@ -365,7 +808,8 @@ def transfer_funds(sender, receiver, amount):
                                                 </div>
                                                 <div className="text-right">
                                                     <div className={`text-2xl font-bold ${
-                                                        report.risk === 'High' ? 'text-red-400' :
+                                                        report.risk === 'Critical' ? 'text-red-400' :
+                                                        report.risk === 'High' ? 'text-orange-400' :
                                                         report.risk === 'Medium' ? 'text-yellow-400' :
                                                         'text-green-400'
                                                     }`}>
@@ -376,12 +820,15 @@ def transfer_funds(sender, receiver, amount):
                                             </div>
                                             
                                             {/* Vulnerabilities */}
-                                            <div className="space-y-3">
-                                                <h3 className="font-semibold text-slate-300">Detected Vulnerabilities</h3>
+                                            <div className="space-y-3 mb-6">
+                                                <h3 className="font-semibold text-slate-300">Detected Vulnerabilities ({report.issues})</h3>
                                                 {report.vulnerabilities.map(vuln => (
                                                     <div key={vuln.id} className="p-3 bg-slate-800/30 rounded-lg border border-slate-700">
                                                         <div className="flex justify-between mb-2">
-                                                            <span className="font-medium text-slate-200">{vuln.name}</span>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="font-medium text-slate-200">{vuln.name}</span>
+                                                                <span className="text-xs px-2 py-0.5 bg-slate-700 rounded">{vuln.category}</span>
+                                                            </div>
                                                             <span className={`text-sm font-medium ${
                                                                 vuln.severity === 'Critical' ? 'text-red-400' :
                                                                 vuln.severity === 'High' ? 'text-orange-400' :
@@ -390,16 +837,35 @@ def transfer_funds(sender, receiver, amount):
                                                                 {vuln.severity}
                                                             </span>
                                                         </div>
-                                                        <p className="text-sm text-slate-400 mb-2">{vuln.fix}</p>
-                                                        <div className="text-xs text-slate-500">Location: {vuln.location}</div>
+                                                        <p className="text-sm text-emerald-400 mb-2">
+                                                            <i className="fas fa-wrench mr-2"></i>
+                                                            {vuln.fix}
+                                                        </p>
+                                                        <div className="flex justify-between text-xs text-slate-500">
+                                                            <span>Location: {vuln.location}</span>
+                                                            <button className="text-indigo-400 hover:text-indigo-300">
+                                                                <i className="fas fa-arrow-up-right-from-square mr-1"></i>
+                                                                View Fix
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                             
-                                            <button className="w-full mt-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:opacity-90">
-                                                <i className="fas fa-magic mr-2"></i>
-                                                Generate AI Fixes for All Issues
-                                            </button>
+                                            {/* Action Buttons */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button className="py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:opacity-90">
+                                                    <i className="fas fa-magic mr-2"></i>
+                                                    Generate AI Fixes
+                                                </button>
+                                                <button 
+                                                    onClick={exportReport}
+                                                    className="py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium hover:opacity-90"
+                                                >
+                                                    <i className="fas fa-file-export mr-2"></i>
+                                                    Export Report
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (
@@ -407,14 +873,16 @@ def transfer_funds(sender, receiver, amount):
                                         <i className="fas fa-code text-4xl text-slate-600 mb-4"></i>
                                         <h3 className="text-xl font-semibold text-slate-300">Ready for Analysis</h3>
                                         <p className="text-slate-500 max-w-sm mt-2 text-center">
-                                            Paste your code and click "Scan Code" to find security vulnerabilities
+                                            {scanMode === 'github' 
+                                                ? 'Enter a GitHub URL and click "Scan Repo" to analyze repository code'
+                                                : 'Paste your code and click "Scan Code" to find security vulnerabilities'}
                                         </p>
                                         <button 
                                             onClick={startDemo}
                                             className="mt-6 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium"
                                         >
                                             <i className="fas fa-play mr-2"></i>
-                                            Try Quick Demo
+                                            Try Full Demo
                                         </button>
                                     </div>
                                 )}
@@ -424,7 +892,9 @@ def transfer_funds(sender, receiver, amount):
                     
                     <footer className="border-t border-slate-800 py-6 text-center text-slate-600 text-sm">
                         <p>&copy; 2024 Sentinel Security Analyzer | Built for Gemini 3 Hackathon</p>
-                        <p className="mt-1 text-xs text-slate-700">AI-powered code security scanning</p>
+                        <p className="mt-1 text-xs text-slate-700">
+                            Features: GitHub Repo Scan • AI Threat Modeling • Compliance Scanner • Export Reports
+                        </p>
                     </footer>
                     
                     <button className="fixed bottom-6 right-6 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow-lg">
