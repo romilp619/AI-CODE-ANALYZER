@@ -361,7 +361,7 @@ const App: React.FC = () => {
       setError(`GitHub scan failed: ${error.message}`);
       
       // Fallback to simulated code
-      const fallbackCode = `# Error fetching repository: ${error.message}\n`;
+      let fallbackCode = `# Error fetching repository: ${error.message}\n`;
       fallbackCode += `# Using sample code for demonstration\n\n`;
       fallbackCode += SAMPLE_VULNERABLE_CODE;
       setCode(fallbackCode);
@@ -927,7 +927,7 @@ const App: React.FC = () => {
                   </div>
                 ) : (
                   report.vulnerabilities.map((vuln) => (
-                    <VulnerabilityCard key={vuln.id} vuln={vuln} />
+                    <VulnerabilityCard key={vuln.id} vuln={vuln} originalCode={code} />
                   ))
                 )}
               </div>
@@ -1134,7 +1134,7 @@ const App: React.FC = () => {
       <footer className="border-t border-slate-800 py-6 text-center text-slate-600 text-sm bg-[#0b1120]">
         <p>&copy; {new Date().getFullYear()} Sentinel Security. Powered by Gemini 3 Pro.</p>
         <p className="text-xs mt-1 text-slate-700">
-          Built for Google DeepMind Gemini 3 Hackathon | AI Security Code Reviewer v3.0
+          Built for Google DeepMind Gemini Hackathon | AI Security Code Reviewer v3.3
         </p>
         <div className="mt-2 text-xs text-slate-600">
           Demo Mode: Ctrl+D • Export Report: Ctrl+E • Keyboard Shortcuts Enabled
