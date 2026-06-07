@@ -65,4 +65,4 @@ Sentinel is designed with security in mind. All code analysis is processed throu
 
 ---
 
-Built with ❤️ by the Sentinel Security Team.
+
